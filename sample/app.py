@@ -1,4 +1,5 @@
 from flask import Flask, request
+from div_costant import TOP_HEROES_CATEGORY
 import core
 import requests
 
@@ -22,12 +23,12 @@ def get_generic_stats(name, id):
 @app.route('/overapi/v1.0/<name>/<id>/featured_stat', methods=['GET'])
 def get_featured_stat(name, id):
     user = name + '-' +id
-    mode = request.args.get('mode', '')
+    mode = request.args.get('mode')
     resp = {}
-    if mode != '' and mode != "competitive" and mode != "quickplay":
+    if mode != None and mode != "competitive" and mode != "quickplay":
         return str({"status" : "KO", "error" : "incorrect mode"})
     try:
-        resp['result'] = core.featured_stat(user) if mode == "" else core.featured_stat(user, mode)
+        resp['result'] = core.featured_stat(user, mode)
     except requests.exceptions.HTTPError as err:
         return str({"status" : "KO", "error" : str(err)})
     if mode=="competitive" and (resp == None or resp == {}):
@@ -38,9 +39,19 @@ def get_featured_stat(name, id):
 @app.route('/overapi/v1.0/<name>/<id>/top_heroes', methods=['GET'])
 def get_top_heroes(name,id):
     user = name + '-' + id
-    mode = request.args.get('mode', '')
-    category = request.args.get('category', '')
-    #TODO
+    mode = request.args.get('mode')
+    category = request.args.get('category')
+    resp = {}
+    if mode != None and mode != "competitive" and mode != "quickplay":
+        return str({"status": "KO", "error": "incorrect mode"})
+    try:
+        resp['result'] = core.top_heroes(user, category, mode)
+    except requests.exceptions.HTTPError as err:
+        return str({"status" : "KO", "error" : str(err)})
+    except KeyError as err2:
+        return str({"status": "KO", "error": "incorrect category"})
+    resp["status"] = "OK";
+    return str(resp)
 
 if __name__ == '__main__':
     app.run(debug=True)
